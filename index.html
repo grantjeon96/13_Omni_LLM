@@ -1,22 +1,1418 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="OmniLLM Hub는 ChatGPT, Claude, Gemini, Perplexity의 답변을 동일 질문 하에 실시간 교차 비교하고, 핵심 통찰력을 통합 추론해내는 지능형 웹 애플리케이션입니다." />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="ChatGPT, Claude, Gemini, Perplexity 답변을 한 눈에 비교하고 통합 추론하는 단일 파일 웹앱">
+  
+  <!-- iOS PWA Standalone Mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OmniLLM">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./site.webmanifest">
+  
+  <title>OmniLLM Hub - 다중 AI 비교 및 통합 추론</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Marked.js for Markdown Rendering (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* --- Premium Glassmorphism Design System --- */
+    :root {
+      --bg-primary: #080B11;
+      --bg-secondary: #0F1420;
+      --bg-card: rgba(21, 28, 45, 0.45);
+      --bg-card-hover: rgba(30, 41, 68, 0.6);
+      --border-glass: rgba(255, 255, 255, 0.07);
+      --border-glass-active: rgba(255, 255, 255, 0.15);
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      
+      --color-gpt: #10A37F;
+      --color-claude: #D97752;
+      --color-gemini: #4285F4;
+      --color-perplexity: #19C37D;
+      --color-synthesis: #A855F7;
+      
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 20, 32, 0.5) 0px, transparent 100%);
+      background-attachment: fixed;
+      padding: 0 16px 40px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Notch Support */
+    header {
+      padding-top: calc(env(safe-area-inset-top) + 24px) !important;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Glassmorphism Utilities */
+    .glass-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .glass-card {
+      background: rgba(15, 20, 32, 0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+      overflow: hidden;
+    }
+
+    .glass-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glass-active);
+      transform: translateY(-2px);
+    }
+
+    /* Header styling */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      border-radius: 0 0 16px 16px;
+      border-top: none;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      color: #A855F7;
+      padding: 10px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #FFF 30%, #A855F7 60%, #4285F4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    /* Grid Layout */
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .models-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .models-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Buttons */
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--color-synthesis) 0%, var(--color-gemini) 100%);
+      color: white;
+      padding: 12px 24px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      background: var(--text-muted);
+      box-shadow: none;
+      transform: none;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-glass);
+      padding: 10px 18px;
+      font-weight: 500;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-glass-active);
+    }
+
+    /* Input area */
+    .input-wrapper {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto 24px;
+    }
+
+    .input-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--border-glass-active);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      color: white;
+      font-size: 16px !important; /* iOS Auto-zoom 방지 */
+      font-family: inherit;
+      line-height: 1.5;
+      padding: 8px 4px;
+      max-height: 200px;
+    }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Card Layout Internals */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-glass);
+      padding: 14px 18px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .indicator-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .card-subtitle {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .card-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Synthesis styling */
+    .synthesis-wrapper {
+      width: 100%;
+      max-width: 900px;
+      margin: 32px auto 0;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      box-shadow: 0 15px 35px rgba(168, 85, 247, 0.06);
+      padding: 24px;
+    }
+
+    .synthesis-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-glass);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    /* Status Badges */
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-loading { color: #F59E0B; animation: pulse 1.5s infinite; }
+    .badge-success { color: #10B981; }
+    .badge-error { color: #EF4444; }
+    .badge-idle { color: var(--text-muted); }
+
+    /* Skeleton Loading Shimmer */
+    .skeleton-line {
+      height: 14px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .skeleton-line:last-child { width: 60%; }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* Modal Overlay (for expanded answers) */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 800px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    /* Markdown styling compatibility */
+    .markdown-body { color: #E5E7EB; text-align: left; }
+    .markdown-body p { margin-bottom: 12px; }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+      font-family: 'Outfit', sans-serif; margin-top: 16px; margin-bottom: 8px; font-weight: 600;
+    }
+    .markdown-body h1 { font-size: 1.3rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 4px; }
+    .markdown-body h2 { font-size: 1.15rem; }
+    .markdown-body ul, .markdown-body ol { margin-left: 20px; margin-bottom: 12px; }
+    .markdown-body li { margin-bottom: 4px; }
+    .markdown-body table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--border-glass); padding: 8px 10px; text-align: left; }
+    .markdown-body th { background: rgba(255, 255, 255, 0.05); }
+
+    /* settings modal overlay */
+    .settings-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .settings-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .settings-box {
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      text-align: left;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      background: #0F1420;
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: white;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input[type="text"]:focus, input[type="password"]:focus, select:focus {
+      border-color: var(--color-gemini);
+    }
+
+    /* Custom installation banner */
+    .ios-banner {
+      background: rgba(168, 85, 247, 0.05);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    /* Custom Toggle Switch */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: rgba(234, 179, 8, 0.03);
+      border: 1px solid rgba(234, 179, 8, 0.15);
+      border-radius: 8px;
+      margin-bottom: 18px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .2s; border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background-color: white; transition: .2s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--color-synthesis); }
+    input:checked + .slider:before { transform: translateX(22px); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
     
-    <!-- PWA & iOS standalone meta tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="OmniLLM" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    
-    <title>OmniLLM Hub - 다중 AI 비교 및 통합 추론</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    <!-- iOS 설치 가이드 배너 -->
+    <div id="iosInstallBanner" class="ios-banner glass-panel" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.5rem;">📱</span>
+        <div>
+          <h4 style="font-size: 0.85rem; font-weight: 600; color: white;">아이폰 홈 화면에 추가하여 앱처럼 사용하세요!</h4>
+          <p style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+            Safari 하단의 <strong>공유 버튼(네모에 화살표)</strong>을 누르고 <strong>'홈 화면에 추가'</strong>를 누르면 전체 화면으로 실행됩니다.
+          </p>
+        </div>
+      </div>
+      <button onclick="dismissIOSBanner()" style="color: var(--text-muted); font-size: 1.25rem; padding: 4px;">&times;</button>
+    </div>
+
+    <!-- 상단 헤더 -->
+    <header class="app-header glass-panel">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <i data-lucide="brain" class="lucide-brain" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div style="text-align: left;">
+          <h1 class="text-gradient">OmniLLM Hub</h1>
+          <p style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 1px;">다중 AI 교차 비교 및 통합 추론</p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span id="modeBadge" class="badge" style="padding: 6px 12px; border-radius: 99px;"></span>
+        <button onclick="openSettings()" class="btn-secondary" style="padding: 8px;"><i data-lucide="settings" style="width: 18px; height: 18px;"></i></button>
+      </div>
+    </header>
+
+    <!-- 질문 입력부 -->
+    <div class="input-wrapper">
+      <div class="input-box glass-panel">
+        <textarea id="questionInput" placeholder="비교 분석할 질문을 입력하세요... (Shift+Enter 줄바꿈, Enter 전송)" rows="1" onkeydown="handleInputKeyDown(event)"></textarea>
+        <button id="sendBtn" onclick="submitQuestion()" class="btn-primary" style="width: 42px; height: 42px; padding: 0; border-radius: 10px;">
+          <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 현재 질문 뱃지 -->
+    <div id="activeQuestionBar" class="glass-card" style="display: none; height: auto; padding: 14px; margin-bottom: 24px; text-align: left; border-radius: 12px;">
+      <span style="font-size: 10px; font-weight: 700; color: var(--color-synthesis); display: block; margin-bottom: 4px; letter-spacing: 0.5px;">CURRENT QUESTION</span>
+      <p id="activeQuestionText" style="font-size: 0.9rem; font-weight: 500; color: white;"></p>
+    </div>
+
+    <!-- 4대 AI 비교 그리드 -->
+    <section class="models-grid">
+      <!-- GPT -->
+      <div class="glass-card" id="card-gpt" style="border-color: rgba(16, 163, 127, 0.15);">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="indicator-dot" style="background: var(--color-gpt);"></div>
+            <div>
+              <span class="card-title">ChatGPT</span>
+              <span id="model-name-gpt" class="card-subtitle">gpt-4o-mini</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="status-gpt" class="badge badge-idle"><i data-lucide="clock" style="width:11px;height:11px;"></i> 대기 중</span>
+            <button onclick="copyAnswer('gpt')" class="btn-copy" style="display: none; color: var(--text-muted);"><i data-lucide="copy" style="width:12px;height:12px;"></i></button>
+            <button onclick="expandCard('gpt')" style="color: var(--text-muted);"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+        <div class="card-body" id="body-gpt">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5;">
+            <i data-lucide="message-square" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+            <span style="font-size: 11px;">질문을 기다리는 중...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude -->
+      <div class="glass-card" id="card-claude" style="border-color: rgba(217, 119, 82, 0.15);">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="indicator-dot" style="background: var(--color-claude);"></div>
+            <div>
+              <span class="card-title">Claude</span>
+              <span id="model-name-claude" class="card-subtitle">claude-3-5-sonnet</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="status-claude" class="badge badge-idle"><i data-lucide="clock" style="width:11px;height:11px;"></i> 대기 중</span>
+            <button onclick="copyAnswer('claude')" class="btn-copy" style="display: none; color: var(--text-muted);"><i data-lucide="copy" style="width:12px;height:12px;"></i></button>
+            <button onclick="expandCard('claude')" style="color: var(--text-muted);"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+        <div class="card-body" id="body-claude">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5;">
+            <i data-lucide="message-square" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+            <span style="font-size: 11px;">질문을 기다리는 중...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gemini -->
+      <div class="glass-card" id="card-gemini" style="border-color: rgba(66, 133, 244, 0.15);">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="indicator-dot" style="background: var(--color-gemini);"></div>
+            <div>
+              <span class="card-title">Gemini</span>
+              <span id="model-name-gemini" class="card-subtitle">gemini-1.5-flash</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="status-gemini" class="badge badge-idle"><i data-lucide="clock" style="width:11px;height:11px;"></i> 대기 중</span>
+            <button onclick="copyAnswer('gemini')" class="btn-copy" style="display: none; color: var(--text-muted);"><i data-lucide="copy" style="width:12px;height:12px;"></i></button>
+            <button onclick="expandCard('gemini')" style="color: var(--text-muted);"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+        <div class="card-body" id="body-gemini">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5;">
+            <i data-lucide="message-square" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+            <span style="font-size: 11px;">질문을 기다리는 중...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Perplexity -->
+      <div class="glass-card" id="card-perplexity" style="border-color: rgba(25, 195, 125, 0.15);">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="indicator-dot" style="background: var(--color-perplexity);"></div>
+            <div>
+              <span class="card-title">Perplexity</span>
+              <span id="model-name-perplexity" class="card-subtitle">sonar</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="status-perplexity" class="badge badge-idle"><i data-lucide="clock" style="width:11px;height:11px;"></i> 대기 중</span>
+            <button onclick="copyAnswer('perplexity')" class="btn-copy" style="display: none; color: var(--text-muted);"><i data-lucide="copy" style="width:12px;height:12px;"></i></button>
+            <button onclick="expandCard('perplexity')" style="color: var(--text-muted);"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+        <div class="card-body" id="body-perplexity">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5;">
+            <i data-lucide="message-square" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+            <span style="font-size: 11px;">질문을 기다리는 중...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 하단 통합 추론 영역 -->
+    <div id="synthesisSection" class="synthesis-wrapper glass-panel" style="display: none;">
+      <div class="synthesis-header">
+        <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+          <div style="color: var(--color-synthesis); display: flex;"><i data-lucide="brain"></i></div>
+          <div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; color: white;">🧠 AI 통합 추론 & 종합 리포트</h3>
+            <span id="synthesisSubtitle" style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-top: 1px;"></span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="synthesizeBtn" onclick="runSynthesis()" class="btn-primary" style="font-size: 0.75rem; padding: 8px 16px;">
+            <i data-lucide="sparkles" style="width:13px;height:13px;"></i> 통합 추론 시작
+          </button>
+          <button id="copySynthesisBtn" onclick="copyAnswer('synthesis')" class="btn-secondary" style="font-size: 0.75rem; padding: 8px 12px; display: none;">
+            <i data-lucide="copy" style="width:12px;height:12px;"></i> 리포트 복사
+          </button>
+        </div>
+      </div>
+      <div id="synthesisBody" class="markdown-body">
+        <p style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 24px 0;">
+          4개 모델의 답변이 도착하면 비교 및 요약을 종합한 통합 추론 결과 보고서를 작성할 수 있습니다.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 설정 모달 -->
+  <div id="settingsOverlay" class="settings-overlay">
+    <div class="settings-box glass-panel">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h3 style="font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 8px; color: white;"><i data-lucide="settings" style="color: var(--color-synthesis)"></i> API & 모델 설정</h3>
+        <button onclick="closeSettings()" style="color: var(--text-muted); font-size: 1.25rem;"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="switch-container">
+        <div>
+          <h4 style="font-size: 0.85rem; font-weight: 600; color: #F59E0B;">시뮬레이션 모드 (Simulation Mode)</h4>
+          <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">API 키 없이 모의 응답 데이터로 UI 동작을 테스트합니다.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="mockModeToggle" onchange="toggleMockMode(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="mainModelSelector">🎯 메인 통합 추론 AI 모델</label>
+        <select id="mainModelSelector">
+          <option value="gemini">Gemini (Google) - 컨텍스트 및 요약 권장</option>
+          <option value="gpt">ChatGPT (OpenAI)</option>
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="perplexity">Perplexity</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="corsProxyInput">🔗 CORS 프록시 우회 주소 (Claude & Perplexity 브라우저 에러 회피용)</label>
+        <input type="text" id="corsProxyInput" placeholder="https://api.allorigins.win/raw?url=">
+        <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">Claude API 등 브라우저 직접 호출 차단(CORS)을 임시 우회하기 위한 프록시 접두사입니다.</p>
+      </div>
+
+      <h4 style="font-size: 0.85rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; margin: 24px 0 12px; color: white;">🔑 모델별 API Key & 모델 식별자 지정</h4>
+
+      <!-- GPT -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label>ChatGPT API Key</label>
+            <input type="password" id="key-gpt" placeholder="sk-proj-...">
+          </div>
+          <div>
+            <label>모델 식별자</label>
+            <input type="text" id="model-gpt" value="gpt-4o-mini">
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label>Claude API Key</label>
+            <input type="password" id="key-claude" placeholder="sk-ant-...">
+          </div>
+          <div>
+            <label>모델 식별자</label>
+            <input type="text" id="model-claude" value="claude-3-5-sonnet-20241022">
+          </div>
+        </div>
+      </div>
+
+      <!-- Gemini -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label>Gemini API Key</label>
+            <input type="password" id="key-gemini" placeholder="AIzaSy...">
+          </div>
+          <div>
+            <label>모델 식별자</label>
+            <input type="text" id="model-gemini" value="gemini-1.5-flash">
+          </div>
+        </div>
+      </div>
+
+      <!-- Perplexity -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label>Perplexity API Key</label>
+            <input type="password" id="key-perplexity" placeholder="pplx-...">
+          </div>
+          <div>
+            <label>모델 식별자</label>
+            <input type="text" id="model-perplexity" value="sonar">
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <button onclick="closeSettings()" class="btn-secondary">취소</button>
+        <button onclick="saveSettings()" class="btn-primary" style="padding: 10px 20px;">저장 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 답변 확대보기 모달 -->
+  <div id="answerOverlay" class="modal-overlay">
+    <div class="modal-content glass-panel">
+      <div class="card-header" style="padding: 18px 24px;">
+        <div class="card-title-group">
+          <div id="expandedDot" class="indicator-dot"></div>
+          <div>
+            <span id="expandedTitle" class="card-title" style="font-size: 1.15rem;">Answer View</span>
+            <span id="expandedSubtitle" class="card-subtitle" style="font-size: 0.72rem;"></span>
+          </div>
+        </div>
+        <button onclick="closeExpandedCard()" style="color: var(--text-muted); font-size: 1.25rem;"><i data-lucide="x"></i></button>
+      </div>
+      <div class="card-body" id="expandedBody" style="padding: 24px; font-size: 1rem;">
+        <!-- content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- --- APP CORE SCRIPTS --- -->
+  <script>
+    // --- Application State ---
+    let config = {
+      apiKeys: { gpt: '', claude: '', gemini: '', perplexity: '' },
+      customModels: { gpt: 'gpt-4o-mini', claude: 'claude-3-5-sonnet-20241022', gemini: 'gemini-1.5-flash', perplexity: 'sonar' },
+      mainModel: 'gemini',
+      corsProxy: 'https://api.allorigins.win/raw?url=',
+      isMockMode: true
+    };
+
+    let activeQuestion = '';
+    let responses = { gpt: '', claude: '', gemini: '', perplexity: '', synthesis: '' };
+    let statuses = { gpt: 'idle', claude: 'idle', gemini: 'idle', perplexity: 'idle' };
+
+    // --- Life Cycle & Storage ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // Lucide 아이콘 초기화
+      lucide.createIcons();
+      
+      // 설정값 불러오기
+      const saved = localStorage.getItem('omni_llm_single_config');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          config = {
+            apiKeys: { ...config.apiKeys, ...(parsed.apiKeys || {}) },
+            customModels: { ...config.customModels, ...(parsed.customModels || {}) },
+            mainModel: parsed.mainModel || 'gemini',
+            corsProxy: parsed.corsProxy !== undefined ? parsed.corsProxy : 'https://api.allorigins.win/raw?url=',
+            isMockMode: parsed.isMockMode !== undefined ? parsed.isMockMode : true
+          };
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        openSettings(); // 최초 실행 시 설정 열기
+      }
+
+      applyConfigToUI();
+      checkIOSDevice();
+    });
+
+    function applyConfigToUI() {
+      // 뱃지 업데이트
+      const badge = document.getElementById('modeBadge');
+      if (config.isMockMode) {
+        badge.className = 'badge';
+        badge.style.backgroundColor = 'rgba(234, 179, 8, 0.1)';
+        badge.style.border = '1px solid rgba(234, 179, 8, 0.2)';
+        badge.style.color = '#F59E0B';
+        badge.innerHTML = `<i data-lucide="shield-alert" style="width:12px;height:12px;"></i> 시뮬레이션 모드`;
+      } else {
+        badge.className = 'badge';
+        badge.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        badge.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+        badge.style.color = '#10B981';
+        badge.innerHTML = `<i data-lucide="sparkles" style="width:12px;height:12px;"></i> 실제 API 모드`;
+      }
+      lucide.createIcons();
+
+      // 컬럼 자막 모델명 업데이트
+      document.getElementById('model-name-gpt').innerText = config.customModels.gpt;
+      document.getElementById('model-name-claude').innerText = config.customModels.claude;
+      document.getElementById('model-name-gemini').innerText = config.customModels.gemini;
+      document.getElementById('model-name-perplexity').innerText = config.customModels.perplexity;
+    }
+
+    function checkIOSDevice() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+      const dismissed = localStorage.getItem('omni_llm_ios_banner_dismissed') === 'true';
+
+      if (isIOS && !isStandalone && !dismissed) {
+        document.getElementById('iosInstallBanner').style.display = 'flex';
+      }
+    }
+
+    function dismissIOSBanner() {
+      document.getElementById('iosInstallBanner').style.display = 'none';
+      localStorage.setItem('omni_llm_ios_banner_dismissed', 'true');
+    }
+
+    // --- Settings Dialog Control ---
+    function openSettings() {
+      document.getElementById('mockModeToggle').checked = config.isMockMode;
+      document.getElementById('mainModelSelector').value = config.mainModel;
+      document.getElementById('corsProxyInput').value = config.corsProxy;
+      
+      // Keys
+      document.getElementById('key-gpt').value = config.apiKeys.gpt;
+      document.getElementById('key-claude').value = config.apiKeys.claude;
+      document.getElementById('key-gemini').value = config.apiKeys.gemini;
+      document.getElementById('key-perplexity').value = config.apiKeys.perplexity;
+      
+      // Models
+      document.getElementById('model-gpt').value = config.customModels.gpt;
+      document.getElementById('model-claude').value = config.customModels.claude;
+      document.getElementById('model-gemini').value = config.customModels.gemini;
+      document.getElementById('model-perplexity').value = config.customModels.perplexity;
+
+      document.getElementById('settingsOverlay').classList.add('active');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsOverlay').classList.remove('active');
+    }
+
+    function toggleMockMode(checked) {
+      // UI상 실시간 반영 유도
+    }
+
+    function saveSettings() {
+      config.isMockMode = document.getElementById('mockModeToggle').checked;
+      config.mainModel = document.getElementById('mainModelSelector').value;
+      config.corsProxy = document.getElementById('corsProxyInput').value;
+
+      config.apiKeys.gpt = document.getElementById('key-gpt').value.trim();
+      config.apiKeys.claude = document.getElementById('key-claude').value.trim();
+      config.apiKeys.gemini = document.getElementById('key-gemini').value.trim();
+      config.apiKeys.perplexity = document.getElementById('key-perplexity').value.trim();
+
+      config.customModels.gpt = document.getElementById('model-gpt').value.trim() || 'gpt-4o-mini';
+      config.customModels.claude = document.getElementById('model-claude').value.trim() || 'claude-3-5-sonnet-20241022';
+      config.customModels.gemini = document.getElementById('model-gemini').value.trim() || 'gemini-1.5-flash';
+      config.customModels.perplexity = document.getElementById('model-perplexity').value.trim() || 'sonar';
+
+      localStorage.setItem('omni_llm_single_config', JSON.stringify(config));
+      applyConfigToUI();
+      closeSettings();
+    }
+
+    // --- Input Key Control ---
+    function handleInputKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitQuestion();
+      }
+    }
+
+    // Input Height Adjuster
+    const textarea = document.getElementById('questionInput');
+    textarea.addEventListener('input', () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    });
+
+    // --- Submission Orchestration (Staggered Calls) ---
+    async function submitQuestion() {
+      const input = document.getElementById('questionInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      activeQuestion = q;
+      input.value = '';
+      textarea.style.height = 'auto';
+
+      // Reset states
+      responses = { gpt: '', claude: '', gemini: '', perplexity: '', synthesis: '' };
+      statuses = { gpt: 'idle', claude: 'idle', gemini: 'idle', perplexity: 'idle' };
+
+      // UI Reset
+      document.getElementById('activeQuestionBar').style.display = 'block';
+      document.getElementById('activeQuestionText').innerText = q;
+      document.getElementById('synthesisSection').style.display = 'block';
+      
+      resetCardUI('gpt');
+      resetCardUI('claude');
+      resetCardUI('gemini');
+      resetCardUI('perplexity');
+      resetSynthesisUI();
+
+      const models = ['gpt', 'claude', 'gemini', 'perplexity'];
+
+      // 500ms 시차(delay)를 두고 각 API 호출 시작
+      models.forEach((type, index) => {
+        setTimeout(async () => {
+          updateCardStatus(type, 'loading');
+          try {
+            const answer = await fetchModelResponse(type, q);
+            responses[type] = answer;
+            statuses[type] = 'success';
+            updateCardStatus(type, 'success', answer);
+          } catch (e) {
+            console.error(e);
+            statuses[type] = 'error';
+            updateCardStatus(type, 'error', e.message);
+          }
+          checkCanSynthesize();
+        }, index * 500);
+      });
+    }
+
+    function checkCanSynthesize() {
+      const anySuccess = Object.values(statuses).some(s => s === 'success');
+      const btn = document.getElementById('synthesizeBtn');
+      if (anySuccess) {
+        btn.disabled = false;
+      }
+    }
+
+    // --- API Fetch Utility ---
+    async function fetchModelResponse(modelType, query) {
+      if (config.isMockMode || !config.apiKeys[modelType]) {
+        return getMockText(modelType, query);
+      }
+
+      const key = config.apiKeys[modelType];
+      const modelName = config.customModels[modelType];
+      const proxy = config.corsProxy;
+
+      if (modelType === 'gpt') {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [{ role: 'user', content: query }]
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || 'OpenAI API Error');
+        return data.choices[0].message.content;
+
+      } else if (modelType === 'claude') {
+        // Claude는 브라우저에서 직접 호출 시 CORS 헤더 제한이 매우 엄격하므로 프록시를 필수로 경유합니다.
+        const targetUrl = 'https://api.anthropic.com/v1/messages';
+        const url = proxy ? (proxy + encodeURIComponent(targetUrl)) : targetUrl;
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: modelName,
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: query }]
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || 'Anthropic API Error');
+        return data.content[0].text;
+
+      } else if (modelType === 'gemini') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: query }] }]
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || 'Gemini API Error');
+        return data.candidates[0].content.parts[0].text;
+
+      } else if (modelType === 'perplexity') {
+        // Perplexity도 간혹 브라우저 CORS 정책에 걸릴 수 있으므로 프록시 사용 여부를 결합합니다.
+        const targetUrl = 'https://api.perplexity.ai/chat/completions';
+        const url = proxy ? (proxy + encodeURIComponent(targetUrl)) : targetUrl;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [{ role: 'user', content: query }]
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || 'Perplexity API Error');
+        return data.choices[0].message.content;
+      }
+    }
+
+    // --- Synthesized Reasoning Logic ---
+    async function runSynthesis() {
+      const body = document.getElementById('synthesisBody');
+      const btn = document.getElementById('synthesizeBtn');
+      const copyBtn = document.getElementById('copySynthesisBtn');
+      const subtitle = document.getElementById('synthesisSubtitle');
+      
+      const mainModelId = config.mainModel;
+      const mainKey = config.apiKeys[mainModelId];
+      
+      btn.disabled = true;
+      copyBtn.style.display = 'none';
+      subtitle.innerText = `분석 요약 진행 중... (${config.customModels[mainModelId]})`;
+      
+      body.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; padding: 24px 0;">
+          <i data-lucide="loader-2" class="animate-spin text-purple-400" style="width: 24px; height: 24px; color: #A855F7; margin-bottom: 12px;"></i>
+          <span style="font-size: 11px; color: var(--text-secondary);">4개 모델 답변을 수집하고 리포트를 종합 분석 중입니다...</span>
+          <div style="width: 100%; max-width: 320px; margin-top: 16px;">
+            <div class="skeleton-line" style="width:95%"></div>
+            <div class="skeleton-line" style="width:85%"></div>
+            <div class="skeleton-line" style="width:50%"></div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+
+      const prompt = `당신은 최고의 수석 분석가이자 AI 통합 추론 전문가입니다.
+다음은 동일한 질문에 대한 4가지 인공지능 모델(ChatGPT, Claude, Gemini, Perplexity)의 답변입니다.
+
+[원본 질문]
+"${activeQuestion}"
+
+[ChatGPT 답변]
+${responses.gpt || '답변 없음 (또는 에러)'}
+
+[Claude 답변]
+${responses.claude || '답변 없음 (또는 에러)'}
+
+[Gemini 답변]
+${responses.gemini || '답변 없음 (또는 에러)'}
+
+[Perplexity 답변]
+${responses.perplexity || '답변 없음 (또는 에러)'}
+
+위 답변들을 철저히 비교 분석하여 다음 항목을 포함하는 종합 분석 보고서를 한글로 작성해 주세요. 
+가독성을 극대화하기 위해 Markdown 형식(표, 글머리 기호, 강조 등)을 풍부하게 활용해 주세요:
+
+1. 📊 **모델별 핵심 논지 요약 및 비교**: 4개 모델의 답변 핵심을 일목요연하게 비교하는 요약 표(Table) 제공.
+2. 🤝 **공통적 합의점**: 모든 모델이 공통으로 동의하거나 중복되는 해결책 및 통찰력 분석.
+3. 🔍 **의견 및 분석의 차이점**: 모델들이 다른 관점으로 접근한 부분, 강조점의 차이, 또는 의견 충돌이 발생한 부분 분석.
+4. 🧠 **최종 통합 추론 및 솔루션**: 각 모델의 장점을 융합하여 도출한 가장 완성도 높은 종합 결론 및 실행 가능한(Actionable) 최선의 솔루션 제안.`;
+
+      // Mock Mode 또는 Key 누락인 경우 시뮬레이터 구동
+      if (config.isMockMode || !mainKey) {
+        setTimeout(() => {
+          const mockReport = getMockSynthesisText(activeQuestion);
+          responses.synthesis = mockReport;
+          body.innerHTML = marked.parse(mockReport);
+          btn.style.display = 'none';
+          copyBtn.style.display = 'inline-flex';
+          subtitle.innerText = `분석 완료: ${config.customModels[mainModelId]} (시뮬레이션)`;
+        }, 1500);
+        return;
+      }
+
+      try {
+        let content = '';
+        const modelName = config.customModels[mainModelId];
+        const proxy = config.corsProxy;
+
+        if (mainModelId === 'gpt') {
+          const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${mainKey}`
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error?.message || 'OpenAI Error in Synthesis');
+          content = data.choices[0].message.content;
+
+        } else if (mainModelId === 'claude') {
+          const targetUrl = 'https://api.anthropic.com/v1/messages';
+          const url = proxy ? (proxy + encodeURIComponent(targetUrl)) : targetUrl;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': mainKey,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: modelName,
+              max_tokens: 4096,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error?.message || 'Anthropic Error in Synthesis');
+          content = data.content[0].text;
+
+        } else if (mainModelId === 'gemini') {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${mainKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }]
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error?.message || 'Gemini Error in Synthesis');
+          content = data.candidates[0].content.parts[0].text;
+
+        } else if (mainModelId === 'perplexity') {
+          const targetUrl = 'https://api.perplexity.ai/chat/completions';
+          const url = proxy ? (proxy + encodeURIComponent(targetUrl)) : targetUrl;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${mainKey}`
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error?.message || 'Perplexity Error in Synthesis');
+          content = data.choices[0].message.content;
+        }
+
+        responses.synthesis = content;
+        body.innerHTML = marked.parse(content);
+        btn.style.display = 'none';
+        copyBtn.style.display = 'inline-flex';
+        subtitle.innerText = `분석 완료: ${config.customModels[mainModelId]}`;
+
+      } catch (err) {
+        console.error(err);
+        body.innerHTML = `
+          <div style="border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); padding: 12px; border-radius: 8px; color: #EF4444; font-size: 11px;">
+            <p><strong>통합 추론 에러:</strong> ${err.message}</p>
+            <p style="margin-top: 4px; color: var(--text-secondary);">해당 메인 추론 모델의 API 키 및 CORS 프록시 설정을 확인해 주십시오.</p>
+          </div>
+        `;
+        btn.disabled = false;
+        subtitle.innerText = '오류 발생';
+      }
+    }
+
+    // --- Copy Utilities ---
+    function copyAnswer(type) {
+      const txt = responses[type];
+      if (!txt) return;
+      
+      navigator.clipboard.writeText(txt).then(() => {
+        alert('답변이 클립보드에 성공적으로 복사되었습니다.');
+      }).catch(e => {
+        console.error(e);
+      });
+    }
+
+    // --- Card Rendering Utilities ---
+    function resetCardUI(type) {
+      document.getElementById(`status-${type}`).className = 'badge badge-idle';
+      document.getElementById(`status-${type}`).innerHTML = `<i data-lucide="clock" style="width:11px;height:11px;"></i> 대기 중`;
+      document.getElementById(`body-${type}`).innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); opacity: 0.5;">
+          <i data-lucide="message-square" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+          <span style="font-size: 11px;">질문을 기다리는 중...</span>
+        </div>
+      `;
+      document.querySelector(`#card-${type} .btn-copy`).style.display = 'none';
+      lucide.createIcons();
+    }
+
+    function resetSynthesisUI() {
+      const btn = document.getElementById('synthesizeBtn');
+      const copyBtn = document.getElementById('copySynthesisBtn');
+      const subtitle = document.getElementById('synthesisSubtitle');
+      const body = document.getElementById('synthesisBody');
+
+      btn.style.display = 'inline-flex';
+      btn.disabled = true;
+      copyBtn.style.display = 'none';
+      subtitle.innerText = '';
+      body.innerHTML = `
+        <p style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 24px 0;">
+          4개 모델의 답변이 도착하면 비교 및 요약을 종합한 통합 추론 결과 보고서를 작성할 수 있습니다.
+        </p>
+      `;
+    }
+
+    function updateCardStatus(type, status, data) {
+      const sBadge = document.getElementById(`status-${type}`);
+      const body = document.getElementById(`body-${type}`);
+      const copyBtn = document.querySelector(`#card-${type} .btn-copy`);
+
+      if (status === 'loading') {
+        sBadge.className = 'badge badge-loading';
+        sBadge.innerHTML = `<i data-lucide="loader-2" class="animate-spin" style="width:11px;height:11px;"></i> 답변 생성 중`;
+        
+        body.innerHTML = `
+          <div class="skeleton-line" style="width:80%"></div>
+          <div class="skeleton-line" style="width:90%"></div>
+          <div class="skeleton-line" style="width:65%"></div>
+        `;
+      } 
+      else if (status === 'success') {
+        sBadge.className = 'badge badge-success';
+        sBadge.innerHTML = `<i data-lucide="check-circle-2" style="width:11px;height:11px;"></i> 완료`;
+        body.innerHTML = `<div class="markdown-body">${marked.parse(data)}</div>`;
+        copyBtn.style.display = 'inline-flex';
+      } 
+      else if (status === 'error') {
+        sBadge.className = 'badge badge-error';
+        sBadge.innerHTML = `<i data-lucide="alert-circle" style="width:11px;height:11px;"></i> 에러`;
+        body.innerHTML = `
+          <div style="border: 1px solid rgba(239, 68, 68, 0.15); background: rgba(239, 68, 68, 0.03); color: #F87171; padding: 10px; border-radius: 8px; font-size: 11px; text-align: left;">
+            <p><strong>에러:</strong> ${data}</p>
+            <p style="margin-top: 4px; color: var(--text-secondary);">설정(우측 상단 톱니바퀴)에서 API Key를 등록했는지 확인하세요.</p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // --- Card Expand Overlay ---
+    function expandCard(type) {
+      const overlay = document.getElementById('answerOverlay');
+      const dot = document.getElementById('expandedDot');
+      const title = document.getElementById('expandedTitle');
+      const subtitle = document.getElementById('expandedSubtitle');
+      const body = document.getElementById('expandedBody');
+
+      let color = 'var(--color-gemini)';
+      let displayName = 'Gemini';
+      if (type === 'gpt') { color = 'var(--color-gpt)'; displayName = 'ChatGPT'; }
+      if (type === 'claude') { color = 'var(--color-claude)'; displayName = 'Claude'; }
+      if (type === 'perplexity') { color = 'var(--color-perplexity)'; displayName = 'Perplexity'; }
+
+      dot.style.background = color;
+      title.innerText = `${displayName} Answer View`;
+      subtitle.innerText = `모델 식별자: ${config.customModels[type]}`;
+      
+      const rawContent = responses[type];
+      if (!rawContent) {
+        body.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 40px 0;">답변 내용이 아직 수집되지 않았습니다.</p>`;
+      } else {
+        body.innerHTML = `<div class="markdown-body">${marked.parse(rawContent)}</div>`;
+      }
+
+      overlay.classList.add('active');
+    }
+
+    function closeExpandedCard() {
+      document.getElementById('answerOverlay').classList.remove('active');
+    }
+
+    // --- MOCK SIMULATOR DATA GENERATION ---
+    function getMockText(type, question) {
+      const delay = Math.random() * 1000 + 1000;
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let text = '';
+          switch (type) {
+            case 'gpt':
+              text = `### [ChatGPT 시뮬레이션 답변]\n\n질문하신 **"${question}"**에 대해 명확하게 구조화된 의견을 정리해 드리겠습니다.\n\n1. **핵심적인 고려사항**\n   - **안정성 확보**: 초기 프로세스 도입 단계에서 에러나 비정상 중단을 방지하기 위한 견고한 사전 차단 장치가 필요합니다.\n   - **비용 최적화**: 다중 에이전트를 가동하는 경우 리소스를 집중화하여 소비 크레딧을 효과적으로 제어해야 합니다.\n2. **논리적 접근안**\n   - 먼저 검증된 아키텍처 패턴을 구축하고 점진적으로 마이너한 기능들을 덧붙이는 구조가 바람직합니다.\n3. **최종 결론**\n   - 단계적인 애자일 배포(Agile Release) 모델을 취하는 것을 적극 권장합니다.`;
+              break;
+            case 'claude':
+              text = `### [Claude 3.5 Sonnet 시뮬레이션 답변]\n\n제시해 주신 **"${question}"**이라는 사안에 대해 심층적으로 다각 분석을 수행하였습니다.\n\n* **개념적 설계의 중심점**:\n  - 이 구조는 복잡한 시스템 내부의 데이터 정합성을 가장 우선으로 다뤄야 합니다.\n  - 클라이언트 환경과 외부 통신 API 사이의 결합도(Coupling)를 완만히 낮추는 인터페이스 구축이 중요합니다.\n* **구체적 실천 과제**:\n  1. 예외 케이스의 완전한 로깅 시스템 보강\n  2. 각 모델 호출 모듈 간의 비동기 동기화 큐(Queue) 패턴 차용\n\n**제언**: 초기 아키텍처 수립에 충분한 시간을 투자하여 유지보수 과정에서의 구조적 변경 비용을 최소화하시기 바랍니다.`;
+              break;
+            case 'gemini':
+              text = `### [Gemini 1.5 Flash 시뮬레이션 답변]\n\n질문하신 **"${question}"**에 대해 쉽고 직관적으로 핵심 포인트를 요약 정리해 드릴게요! 🚀\n\n* **한 줄 요약**:\n  - **"단순함(Simplicity)"**이 최고의 확장성입니다. 불필요한 레이어를 최대한 들어내어 연산 비용을 아끼세요.\n* **추천 방안**:\n  - 복잡한 프록시나 미들웨어를 거치지 않고 직접 브라우저에서 제어하는 단일화된 구조를 취하는 것이 가장 빠른 개발 방식입니다.\n  - 필요에 따라 로컬 스토리지를 브레인 데이터 저장소로 가볍게 결합하세요.\n\n더 필요하신 세부 분석이 있으시면 언제든지 구체적인 질문을 덧붙여 주세요!`;
+              break;
+            case 'perplexity':
+              text = `### [Perplexity (Sonar) 시뮬레이션 답변]\n\n최근 웹 기술 정보 및 트렌드를 기반으로 **"${question}"**에 대해 정밀 리포트를 제공합니다.\n\n* **최신 데이터 요약 (2026)**:\n  - 다중 LLM을 단일 프론트엔드로 수렴하는 아키텍처 트렌드는 최근 1년 사이 약 25% 이상 늘어났습니다 (출처: Global Dev Report).\n  - 네트워크 CORS 제약 문제 해결을 위해 무료 퍼블릭 게이트웨이(api.allorigins.win 등)를 결합하는 SPA 방식이 실무 테스트용으로 널리 사용되고 있습니다.\n* **실행 권장 사항**:\n  - API 요청 흐름을 500ms 단위로 조절(Throttle)하여 동시 실행 충돌을 해소하는 것이 안전합니다.`;
+              break;
+          }
+          resolve(text);
+        }, delay);
+      });
+    }
+
+    function getMockSynthesisText(question) {
+      return `# 🧠 OmniLLM Hub 통합 추론 리포트 (시뮬레이션)
+
+질문 "${question}"에 대해 ChatGPT, Claude, Gemini, Perplexity의 모의 답변을 취합하여 종합 도출한 최종 추론 결론입니다.
+
+## 📊 1. 모델별 핵심 논지 요약 및 비교
+| 모델명 | 주요 해결 방식 | 강점 관점 | 특이 사항 |
+| :--- | :--- | :--- | :--- |
+| **ChatGPT** | 단계적 애자일 배포 | 구조의 안정성, 비용 제어 | 명확하고 규격화된 분석 제공 |
+| **Claude** | 결합도 약화 & 비동기 큐 | 데이터 정합성, 모듈 격리 | 학술적이고 상세한 아키텍처 기술 |
+| **Gemini** | 단순화 및 단일 파일 제어 | 개발 및 로딩 속도 | 실용적인 브라우저 사이드 경량화 강조 |
+| **Perplexity** | 시차 조율(Throttle), 프록시 결합 | 최신 실무 트렌드, 데이터 근거 | 글로벌 개발 통계 및 프록시 우회 제안 |
+
+---
+
+## 🤝 2. 공통적 합의점
+네 가지 인공지능이 만장일치로 동의한 핵심 성공 전략은 다음과 같습니다:
+* **비동기 흐름 제어의 중요성**: 여러 LLM을 연동할 때는 한 번에 동시 다발적으로 리소스를 요청하기보다, **약간의 시차(500ms 등)를 두어 순차적으로 호출을 분산(Throttle)**해야 네트워크 충돌이나 타임아웃 오류를 차단할 수 있습니다.
+* **로컬 경량화 지향**: 불필요한 미들웨어 서버를 구축하기보다 브라우저 환경에서 직접 제어하는 경량화(SPA) 방식을 가볍게 결합하는 것이 테스트 생산성에 가장 뛰어납니다.
+
+---
+
+## 🔍 3. 의견 및 분석의 차이점
+* **구조적 접근 vs 속도적 접근**: **Claude**와 **ChatGPT**는 시스템의 아키텍처적 견고함과 데이터 격리 구조를 우선 설계하라고 경고하지만, **Gemini**는 속도와 직관성을 확보하는 '단순성'이 최선임을 지적합니다.
+* **현실 데이터 인용**: **Perplexity**는 유일하게 2026년 최신 기술 동향 수치(25% 증가 통계)를 참조 링크 정보 형태로 제공하며 통계적이고 정형화된 근거를 내세웠습니다.
+
+---
+
+## 🧠 4. 최종 통합 추론 및 최선의 솔루션
+모든 AI의 관점을 융합한 최선의 실행 로드맵은 **"프레임워크 프리(Framework-free)의 1단계 정비 후 점진적 보강"**입니다.
+
+1. **1단계: 단순화 구축 (Gemini/Perplexity 추천)**
+   - 별도 Node.js 백엔드 서버 없이 단일 HTML과 브라우저 Fetch 기술만을 활용해 비용이 들지 않는 클라이언트 사이드 SPA 웹앱을 기동합니다.
+   - Claude 등 CORS 차단이 있는 API는 CORS 프록시 접두사를 붙여 우회 처리합니다.
+2. **2단계: 비동기 흐름 조율 (ChatGPT/Perplexity 추천)**
+   - API를 순차적으로 500ms의 시차를 두고 보내도록 자바스크립트 타이머를 구성하여 동시 요청 충돌을 방지합니다.
+3. **3단계: 데이터 정합성 보완 (Claude 추천)**
+   - API Key 정보는 로컬 스토리지에 격리하고 유출되지 않도록 전송 시에만 활용하여 데이터 관리의 보안을 완성합니다.
+
+> **💡 요약 의견**: 복잡한 React 빌드 및 Express 인프라 없이도, **단 하나의 index.html 파일 안에 경량 아키텍처를 담고 퍼블릭 CORS 프록시를 결합하여 아이폰과 PC 브라우저에서 즉시 더블클릭 기동하는 방식**이 본 문제 해결에 가장 우수한 최종 해결안입니다.`;
+    }
+  </script>
+</body>
 </html>

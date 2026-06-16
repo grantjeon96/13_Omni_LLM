@@ -1,16 +1,39 @@
-# React + Vite
+# 🧠 OmniLLM Hub - 다중 AI 비교 및 통합 추론 (Single HTML App)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**OmniLLM Hub**는 ChatGPT, Claude, Gemini, Perplexity의 답변을 동일 질문 하에 실시간 교차 비교하고, 핵심 통찰력을 요약/통합 추론해내는 프리미엄 웹앱입니다.
 
-Currently, two official plugins are available:
+별도의 서버(Node.js, Express, Vite 등) 설치나 터미널 조작 없이, **`index.html` 파일 하나만 더블 클릭하면 브라우저에서 즉시 실행**되는 초경량 싱글 파일 웹앱으로 전면 리뉴얼되었습니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 📱 주요 특징 및 기능
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **설치 프리 (No Server)**:
+   - 복잡한 빌드 도구 없이 컴퓨터에서 `index.html` 파일을 더블 클릭하여 크롬이나 사파리로 즉시 열 수 있습니다.
+   
+2. **시차 순차 호출 (Staggered Calls)**:
+   - 4개 AI API를 호출할 때 네트워크 타임아웃 및 레이트 리밋 충돌을 방지하기 위해 각 API 요청 사이에 **0.5초(500ms)의 시차**를 두고 안전하게 순차 실행합니다.
 
-## Expanding the ESLint configuration
+3. **안전한 API Key 관리**:
+   - 입력한 모든 API Key는 외부 서버에 절대 전송되지 않고 사용자의 웹 브라우저 로컬 저장소(`LocalStorage`)에만 안전하게 저장됩니다.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+4. **시뮬레이션 모드 (Simulation Mode)**:
+   - API Key 입력이 없어도 UI 작동 방식을 체험할 수 있도록 고급 모의 답변 생성기를 내장하고 있습니다. (최초 실행 시 기본 활성화)
+
+5. **아이폰(iOS) PWA 지원**:
+   - 모바일 Safari에서 주소창 없이 네이티브 앱처럼 풀스크린으로 실행되도록 구성되었으며, 상단 노치/다이내믹 아일랜드 영역의 세이프존 디자인 및 모바일 전용 앱 아이콘이 포함되어 있습니다.
+
+---
+
+## 🚀 사용 및 다운로드 방법
+
+### 다른 기기나 컴퓨터에서 다운로드할 때:
+1. 저장소 우측 상단의 초록색 **`Code`** 버튼을 누릅니다.
+2. **`Download ZIP`**을 눌러 전체 파일을 다운로드한 뒤 압축을 풉니다.
+3. 압축이 풀린 폴더 내의 **`index.html`** 파일을 더블 클릭하여 크롬(Chrome)이나 사파리(Safari) 브라우저로 엽니다.
+
+### 아이폰(iOS)에 설치하여 앱처럼 쓰는 방법:
+1. 다운로드 받은 폴더 전체(`index.html`과 manifest, 이미지 파일들)를 Vercel, Netlify 또는 GitHub Pages 등 무료 정적 호스팅 서비스에 원클릭 배포합니다.
+2. 배포된 주소로 아이폰 Safari 브라우저에서 접속합니다.
+3. Safari 하단의 **[공유 버튼]**(네모 상자 위로 화살표 모양)을 터치합니다.
+4. **[홈 화면에 추가]**를 누른 뒤 바탕화면에 생성된 아이콘을 터치하여 네이티브 앱처럼 사용합니다.

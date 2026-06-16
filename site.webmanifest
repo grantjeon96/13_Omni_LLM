@@ -2,19 +2,19 @@
   "name": "OmniLLM Hub",
   "short_name": "OmniLLM",
   "description": "ChatGPT, Claude, Gemini, Perplexity 비교 및 통합 추론 시스템",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#080B11",
   "theme_color": "#080B11",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "./icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/icon-512.png",
+      "src": "./icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
