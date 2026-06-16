@@ -49,13 +49,24 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background-image: 
     radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.08) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
     radial-gradient(at 50% 50%, rgba(15, 20, 32, 0.5) 0px, transparent 100%);
   background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safe Area & Notch Support */
+header {
+  padding-top: calc(env(safe-area-inset-top) + 24px) !important;
+}
+
+/* iOS Auto-Zoom Prevention */
+input, textarea, select {
+  font-size: 16px !important;
 }
 
 /* Scrollbar Customization */

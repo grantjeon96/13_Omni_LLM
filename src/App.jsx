@@ -28,8 +28,20 @@ export default function App() {
   const [synthesisStatus, setSynthesisStatus] = useState('idle');
   const [synthesisError, setSynthesisError] = useState('');
 
+  // iOS PWA 설치 안내 배너 상태
+  const [showiOSBanner, setShowiOSBanner] = useState(false);
+
   // 1. 컴포넌트 마운트 시 LocalStorage에서 설정 로드
   useEffect(() => {
+    // iOS 여부 및 Standalone 모드 체크
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const bannerDismissed = localStorage.getItem('omni_llm_ios_banner_dismissed') === 'true';
+
+    if (isIOS && !isStandalone && !bannerDismissed) {
+      setShowiOSBanner(true);
+    }
+
     const savedConfig = localStorage.getItem('omni_llm_config');
     if (savedConfig) {
       try {
@@ -50,6 +62,11 @@ export default function App() {
       setIsSettingsOpen(true);
     }
   }, []);
+
+  const handleDismissBanner = () => {
+    setShowiOSBanner(false);
+    localStorage.setItem('omni_llm_ios_banner_dismissed', 'true');
+  };
 
   // 2. 설정 저장
   const handleSaveConfig = (newConfig) => {
@@ -159,6 +176,28 @@ export default function App() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-8 pb-16 min-h-screen flex flex-col" style={{ width: '100%', margin: '0 auto' }}>
+      {/* iOS PWA 설치 안내 배너 */}
+      {showiOSBanner && (
+        <div className="w-full mt-4 p-4 glass-panel flex items-center justify-between animate-slide-up animate-fade-in" style={{ borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.25)', backgroundColor: 'rgba(168, 85, 247, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+          <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
+            <span style={{ fontSize: '1.5rem' }}>📱</span>
+            <div>
+              <p className="font-semibold text-white text-xs md:text-sm" style={{ margin: 0, fontWeight: 600 }}>홈 화면에 추가하여 앱처럼 사용해 보세요!</p>
+              <p className="text-gray-400 mt-1 text-[11px] md:text-xs" style={{ margin: '2px 0 0', color: 'var(--text-secondary)' }}>
+                아이폰 Safari 하단의 <strong>공유 버튼(네모에 화살표 모양)</strong>을 누른 뒤, <strong>'홈 화면에 추가'</strong>를 선택하시면 전체화면 앱으로 실행됩니다.
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={handleDismissBanner}
+            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* 상단 네비게이션 헤더 */}
       <Header 
         onOpenSettings={() => setIsSettingsOpen(true)} 
